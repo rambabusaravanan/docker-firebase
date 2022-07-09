@@ -3,12 +3,28 @@ name: Docker Image CI
 on:
   push:
     branches: [ "master" ]
+  schedule:
+    - cron: '0 0 1 * *'
 
 jobs:
-
   docker:
-    name: Push Docker image
+    name: Build & Push Docker
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        variant:
+          - name: latest
+            dockerfile: Dockerfile
+          - name: lts
+            dockerfile: Dockerfile.lts
+          - name: 18
+            dockerfile: Dockerfile.18
+          - name: 16
+            dockerfile: Dockerfile.16
+          - name: 14
+            dockerfile: Dockerfile.14
+          - name: 12
+            dockerfile: Dockerfile.12
     steps:
 
     - name: Checkout
@@ -26,20 +42,11 @@ jobs:
       with:
         images: rambabusaravanan/firebase
 
-    - name: Build and Push Docker Image (LTS)
+    - name: Build and Push Docker Image (node:${{ matrix.variant.name }})
       uses: docker/build-push-action@v3
       with:
         context: .
-        file: Dockerfile.lts
+        file: ${{ matrix.variant.dockerfile }}
         push: true
-        tags: rambabusaravanan/firebase:lts
-        labels: ${{ steps.meta.outputs.labels }}
-
-    - name: Build and Push Docker Image (Latest)
-      uses: docker/build-push-action@v3
-      with:
-        context: .
-        file: Dockerfile
-        push: true
-        tags: rambabusaravanan/firebase:latest
+        tags: rambabusaravanan/firebase:${{ matrix.variant.name }}
         labels: ${{ steps.meta.outputs.labels }}
